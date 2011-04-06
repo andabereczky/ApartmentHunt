@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ApartmentHunt</title>
+    <link href="style/style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body class="twoColFixLtHdr">
+
+<div id="container">
+    <div id="header">
+    	<h1>ApartmentHunt</h1>
+    <!-- end #header --></div>
+    <div id="mainContentNoSideBarCenter">
+{% if sites %}
+        <select name="site">
+	{% for site in sites %}
+          <option value="{{ site.id }}">{{ site.site_name }}</option>
+    {% endfor %}
+        </select>
+{% else %}
+		<p>No Craigslist sites available.</p>
+{% endif %}
+	<!-- end #mainContent --></div>
+    <div id="footer">
+	    <p>&copy; Anda Bereczky 2011</p>
+    <!-- end #footer --></div>
+<!-- end #container --></div>
+
+</body>
+
+</html>
