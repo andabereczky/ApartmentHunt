@@ -5,7 +5,8 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>ApartmentHunt</title>
-    <link href="style/style.css" rel="stylesheet" type="text/css" />
+    <link href="/static/css/style.css" rel="stylesheet" type="text/css" />
+    <script src="/static/js/apartmenthunt.js" type="text/javascript"></script>
 </head>
 
 <body class="twoColFixLtHdr">
@@ -16,13 +17,14 @@
     <!-- end #header --></div>
     <div id="mainContentNoSideBarCenter">
 {% if sites %}
-        <select name="site">
+        <select id="select_site" name="select_site">
 	{% for site in sites %}
           <option value="{{ site.id }}">{{ site.site_name }}</option>
     {% endfor %}
         </select>
+		<p><input type="button" name="search" id="search" value="Search" onclick="go_search()" />&nbsp;<input type="button" name="collect_data" id="collect_data" value="Collect new data" onclick="go_collect_data()" /></p>
 {% else %}
-		<p>No Craigslist sites available.</p>
+	  <p>No Craigslist sites available.</p>
 {% endif %}
 	<!-- end #mainContent --></div>
     <div id="footer">
