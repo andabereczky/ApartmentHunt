@@ -14,8 +14,12 @@
     <div id="header">
     	<h1>ApartmentHunt</h1>
     <!-- end #header --></div>
-    <div id="mainContentNoSideBarCenter">
-		<p>You're looking to collect data for site {{ site.site_name }}.</p>
+    <div id="mainContentNoSideBar">
+{% if site.apartment_set.all %}
+        <p>Collected data about {{ num_apartments }} apartments in {{ site.site_name }}. <a href="/apartmenthunt/{{ site.id }}/search/">Go to search</a>.</p>
+{% else %}
+	  <p>No apartments found in {{ site.site_name }}. <a href="/apartmenthunt/{{ site.id }}/datacollection/">Try again</a>.</p>
+{% endif %}
 	<!-- end #mainContent --></div>
     <div id="footer">
 	    <p>&copy; Anda Bereczky 2011</p>

@@ -13,7 +13,7 @@ class CraigslistSite(models.Model):
 
 class Apartment(models.Model):
 	''' A class representing an ad for an apartment.'''
-	craigs_list_site = models.ForeignKey(CraigslistSite)
+	craigslist_site = models.ForeignKey(CraigslistSite)
 	full_ad_text = models.TextField()
 	def __unicode__(self):
 		return self.full_ad_text;
