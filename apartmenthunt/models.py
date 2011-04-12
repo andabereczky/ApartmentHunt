@@ -14,6 +14,14 @@ class CraigslistSite(models.Model):
 class Apartment(models.Model):
 	''' A class representing an ad for an apartment.'''
 	craigslist_site = models.ForeignKey(CraigslistSite)
+	listing_number = models.CharField(max_length=16)
+	price = models.IntegerField(default=0)
+	num_bedrooms = models.IntegerField(default=0)
+	num_bathrooms = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
+	title = models.CharField(max_length=128, default='')
+	address = models.CharField(max_length=256, default='')
+	cats_allowed = models.BooleanField(default=False)
+	dogs_allowed = models.BooleanField(default=False)
 	full_ad_text = models.TextField()
 	def __unicode__(self):
-		return self.full_ad_text;
+		return self.title;

@@ -25,10 +25,10 @@ def datacollection(request, craigslist_site_id):
 	site = get_object_or_404(CraigslistSite, pk=craigslist_site_id)
 	
 	# Delete all old apartments in the database.
-	Apartment.objects.filter(craigslist_site=craigslist_site_id).delete()
+	# Apartment.objects.filter(craigslist_site=craigslist_site_id).delete()
 	
 	# Get the site again from the database.
-	site = get_object_or_404(CraigslistSite, pk=craigslist_site_id)
+	# site = get_object_or_404(CraigslistSite, pk=craigslist_site_id)
 	
 	# Download new data from Craigslist.
 	crawler.crawl(site)
