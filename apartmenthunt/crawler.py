@@ -1,10 +1,12 @@
 from urllib import urlopen
 from decimal import Decimal
+from datetime import datetime
 import re
 from django.shortcuts import get_object_or_404
 from apartmenthunt.models import CraigslistSite, Apartment
 
 # Taken from http://www.usps.com/ncsc/lookups/abbreviations.html
+date_and_time_pattern = 'Date: (?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2}), (?P<hours>( |[0-9])[0-9]):(?P<minutes>[0-9]{2})(?P<am_or_pm>AM|PM) (EDT|EST|CDT|CST|MDT|MST|PDT|PST)'
 number = '[0-9]+[A-Za-z]*'
 street = '(([A-Z]|[0-9]+)[a-z]*[.]?[ ]?){1,2}'
 street_suffix = '(%s)' % '|'.join(('ALLEE','ALLEY','ALLY','ALY','AV','AVE','AVEN','AVENU','AVENUE','AVN','AVNUE','BLVD','BOUL','BOULEVARD','BOULV',
@@ -47,7 +49,13 @@ def crawl(site):
 	main_page_content = page_reader.read()
 	
 	# Download each individual ad.
-	# download_ads(site, main_page_content)
+	download_ads(site, main_page_content)
+	
+	# Comment this out for release
+	apartments = Apartment.objects.filter(craigslist_site=site.id)
+	for apartment in apartments:
+		apartment.information_extracted = False
+		apartment.save()
 	
 	# Extract information from ads
 	extract_ad_information(site)
@@ -71,8 +79,16 @@ def download_ads(site, main_page_content):
 	# with the information extracted from the main page.
 	for match in regex.finditer(main_page_content):
 		
-		# Get the preliminary information.
+		# Get the listing number and check if this listing has already been
+		# added to the database.
 		listing_number = match.group('listing_number')
+		try:
+			Apartment.objects.get(listing_number=listing_number)
+			break
+		except Apartment.DoesNotExist:
+			pass
+		
+		# Get the preliminary information.
 		price = match.group('price1')
 		if price == None:
 			price = match.group('price2')
@@ -112,6 +128,7 @@ def extract_ad_information(site):
 	apartments = Apartment.objects.filter(craigslist_site=site.id)
 	
 	# Compile all needed regular expressions.
+	date_and_time_regex = re.compile(date_and_time_pattern)
 	pattern = '\$(?P<price>\d+)' # price
 	price_regex = re.compile(pattern)
 	pattern = '((?P<num_bedrooms1>\d+) ?br)|((?P<num_bedrooms2>\d+) bedroom(s)?)' # number of bedrooms
@@ -131,11 +148,27 @@ def extract_ad_information(site):
 	num = 0
 	for apartment in apartments:
 		
+		if apartment.information_extracted:
+			continue
+		
 		print 'Apartment #%d:' % apartment.id
 		updated = False
 		
 		# Strip HTML tags from the ad page.
 		ad_text_no_html = remove_html_tags(apartment.full_ad_text)
+		
+		# Extract listing date and time.
+		date_and_time_match = date_and_time_regex.search(ad_text_no_html)
+		if date_and_time_match:
+			date_and_time = get_date_and_time(
+				int(date_and_time_match.group('year')),
+				int(date_and_time_match.group('month')),
+				int(date_and_time_match.group('day')),
+				int(date_and_time_match.group('hours')),
+				int(date_and_time_match.group('minutes')),
+				date_and_time_match.group('am_or_pm'))
+			apartment.listing_datetime = date_and_time
+			updated = True
 		
 		# Extract price.
 		price_match = price_regex.search(ad_text_no_html)
@@ -224,14 +257,14 @@ def extract_ad_information(site):
 		cltag_city_match = cltag_city_regex.search(apartment.full_ad_text)
 		if cltag_city_match:
 			city = cltag_city_match.group('city')
-			if apartment.city and apartment.city != city:
+			if apartment.city and apartment.city.lower() != city.lower():
 				print '  City conflict: %s != %s' % (apartment.city, city)
 			apartment.city = city
 			updated = True
 		cltag_state_match = cltag_state_regex.search(apartment.full_ad_text)
 		if cltag_state_match:
 			state = cltag_state_match.group('state')
-			if apartment.state and apartment.state != state:
+			if apartment.state and apartment.state.lower() != state.lower():
 				print '  State conflict: %s != %s' % (apartment.state, state)
 			apartment.state = state
 			updated = True
@@ -248,7 +281,6 @@ def extract_ad_information(site):
 		
 		# Save the extracted information.
 		if updated:
-			print 'Number of bathrooms: %f' % apartment.num_bathrooms
 			apartment.save()
 		
 	print 'extracted %d street addresses' % num
@@ -256,3 +288,8 @@ def extract_ad_information(site):
 def remove_html_tags(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
+
+def get_date_and_time(year, month, day, hours, minutes, am_or_pm):
+	if am_or_pm == 'PM' and hours > 12:
+		hours += 12
+	return datetime(year, month, day, hours, minutes, 0)
