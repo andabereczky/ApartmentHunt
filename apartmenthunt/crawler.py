@@ -1,6 +1,40 @@
 from urllib import urlopen
+from decimal import Decimal
 import re
+from django.shortcuts import get_object_or_404
 from apartmenthunt.models import CraigslistSite, Apartment
+
+# Taken from http://www.usps.com/ncsc/lookups/abbreviations.html
+number = '[0-9]+[A-Za-z]*'
+street = '(([A-Z]|[0-9]+)[a-z]*[.]?[ ]?){1,2}'
+street_suffix = '(%s)' % '|'.join(('ALLEE','ALLEY','ALLY','ALY','AV','AVE','AVEN','AVENU','AVENUE','AVN','AVNUE','BLVD','BOUL','BOULEVARD','BOULV',
+    'BYP','BYPA','BYPAS','BYPASS','BYPS','CIR','CIRC','CIRCL','CIRCLE','COURT','COVE','CRCL','CRCLE','CRECENT','CRES','CRESCENT','CRESENT','CRSCNT',
+    'CRSENT','CRSNT','CRT','CT','CV','DR','DRIV','DRIVE','DRV','EXP','EXPR','EXPRESS','EXPRESSWAY','EXPW','EXPY','EXT','EXTENSION','EXTN','EXTNSN',
+    'FREEWAY','FREEWY','FRWAY','FRWY','FWY','GREEN','GRN','HIGHWAY','HIGHWY','HIWAY','HIWY','HWAY','HWY','LA','LANE','LANES','LN','LOOP','LOOPS',
+    'MALL','MANOR','MNR','PARKWAY','PARKWY','PATH','PATHS','PIKE','PIKES','PKWAY','PKWY','PKY','PL','PLACE','PLAZA','PLZ','PLZA','RD','ROAD','ROUTE',
+    'RTE','SPUR','SQ','SQR','SQRE','SQU','SQUARE','ST','STR','STREET','STRT','TER','TERR','TERRACE','THROUGHWAY','TPK','TPKE','TR','TRACE','TRACES',
+    'TRACK','TRACKS','TRAIL','TRAILS','TRAK','TRCE','TRK','TRKS','TRL','TRLS','TRNPK','TRPK','TRWY','TURNPIKE','TURNPK','VDCT','VIA','VIADCT',
+    'VIADUCT','WALK','WAY','WY'))
+city = '([A-Z][a-z]+[.]?[ ]?){3,}'
+state = '(%s)' % '|'.join(('ALABAMA','AL','ALASKA','AK','AMERICAN SAMOA','AS','ARIZONA','AZ','ARKANSAS','AR','CALIFORNIA','CA','COLORADO','CO',
+    'CONNECTICUT','CT','DELAWARE','DE','DISTRICT OF COLUMBIA','DC','FLORIDA','FL','GEORGIA','GA',
+    'HAWAII','HI','IDAHO','ID','ILLINOIS','IL','INDIANA','IN','IOWA','IA','KANSAS','KS','KENTUCKY','KY','LOUISIANA','LA','MAINE','ME',
+    'MARYLAND','MD','MASSACHUSETTS','MA','MICHIGAN','MI','MINNESOTA','MN','MISSISSIPPI','MS','MISSOURI','MO','MONTANA','MT',
+    'NEBRASKA','NE','NEVADA','NV','NEW HAMPSHIRE','NH','NEW JERSEY','NJ','NEW MEXICO','NM','NEW YORK','NY','NORTH CAROLINA','NC','NORTH DAKOTA','ND',
+    'OHIO','OH','OKLAHOMA','OK','OREGON','OR','PALAU','PW','PENNSYLVANIA','PA','PUERTO RICO','PR','RHODE ISLAND','RI',
+    'SOUTH CAROLINA','SC','SOUTH DAKOTA','SD','TENNESSEE','TN','TEXAS','TX','UTAH','UT','VERMONT','VT','VIRGIN ISLANDS','VI','VIRGINIA','VA',
+    'WASHINGTON','WA','WEST VIRGINIA','WV','WISCONSIN','WI','WYOMING','WY'))
+street_address_pattern = '(?P<street_address>%s %s( %s)?[.]?)' % (number, street, street_suffix)
+city_state_pattern = '((?P<city>%s),[ ]?(?P<state>%s))' % (city, state)
+cltag_xstreet0_pattern = '<!-- CLTAG xstreet0=(?P<xstreet0>.*?) -->'
+cltag_xstreet1_pattern = '<!-- CLTAG xstreet1=(?P<xstreet1>.*?) -->'
+cltag_city_pattern = '<!-- CLTAG city=(?P<city>.*?) -->'
+cltag_state_pattern = '<!-- CLTAG region=(?P<state>.*?) -->'
+cltag_dogs_pattern = '<!-- CLTAG dogsAreOK=on -->'
+cltag_cats_pattern = '<!-- CLTAG catsAreOK=on -->'
+
+# Needed only if this information is not extracted from the main search page.
+# cltag_geographic_area = '<!-- CLTAG GeographicArea=(?P<geographic_area>.*?) -->'
 
 def crawl(site):
 	'''Crawls the given Craigslist site.'''
@@ -67,11 +101,158 @@ def download_ads(site, main_page_content):
 			price=price,
 			num_bedrooms=num_bedrooms,
 			title=title,
-			address=address,
+			title_address=address,
 			full_ad_text=page_content)
 		new_apt.save()
 		print 'done.'
 
 def extract_ad_information(site):
-	# TODO: implement
-	pass
+	
+	# Get the apartments belonging to the given site.
+	apartments = Apartment.objects.filter(craigslist_site=site.id)
+	
+	# Compile all needed regular expressions.
+	pattern = '\$(?P<price>\d+)' # price
+	price_regex = re.compile(pattern)
+	pattern = '((?P<num_bedrooms1>\d+) ?br)|((?P<num_bedrooms2>\d+) bedroom(s)?)' # number of bedrooms
+	num_bedrooms_regex = re.compile(pattern, re.IGNORECASE)
+	pattern = '((?P<num_bathrooms1>(\d+)\.?(\d+)?) ?ba)|((?P<num_bathrooms2>(\d+)\.?(\d+)?) bathroom(s)?)' # number of bathrooms
+	num_bathrooms_regex = re.compile(pattern, re.IGNORECASE)
+	street_address_regex = re.compile(street_address_pattern, re.IGNORECASE) # street address
+	city_state_regex = re.compile(city_state_pattern, re.IGNORECASE) # city and state
+	cltag_xstreet0_regex = re.compile(cltag_xstreet0_pattern, re.IGNORECASE) # street location
+	cltag_xstreet1_regex = re.compile(cltag_xstreet1_pattern, re.IGNORECASE) # closest intersection
+	cltag_city_regex = re.compile(cltag_city_pattern, re.IGNORECASE) # city
+	cltag_state_regex = re.compile(cltag_state_pattern, re.IGNORECASE) # state
+	cltag_dogs_regex = re.compile(cltag_dogs_pattern) # are dogs allowed?
+	cltag_cats_regex = re.compile(cltag_cats_pattern) # are cats allowed?
+	
+	# Loop through all apartments.
+	num = 0
+	for apartment in apartments:
+		
+		print 'Apartment #%d:' % apartment.id
+		updated = False
+		
+		# Strip HTML tags from the ad page.
+		ad_text_no_html = remove_html_tags(apartment.full_ad_text)
+		
+		# Extract price.
+		price_match = price_regex.search(ad_text_no_html)
+		if price_match:
+			new_price = price_match.group('price')
+			if new_price:
+				new_price = int(new_price)
+				if apartment.price:
+					if apartment.price != new_price:
+						print '  Price conflict: %d != %d' % (apartment.price, new_price)
+				else:
+					apartment.price = new_price
+					updated = True
+		
+		# Extract number of bedrooms.
+		num_bedrooms_match = num_bedrooms_regex.search(ad_text_no_html)
+		if num_bedrooms_match:
+			new_num_bedrooms1 = num_bedrooms_match.group('num_bedrooms1')
+			new_num_bedrooms2 = num_bedrooms_match.group('num_bedrooms2')
+			if new_num_bedrooms1:
+				new_num_bedrooms1 = int(new_num_bedrooms1)
+				if apartment.num_bedrooms:
+					if apartment.num_bedrooms != new_num_bedrooms1:
+						print '  Number of bedrooms conflict: %d != %d' % (apartment.num_bedrooms, new_num_bedrooms1)
+				else:
+					apartment.num_bedrooms = new_num_bedrooms1
+					updated = True
+			if new_num_bedrooms2:
+				new_num_bedrooms2 = int(new_num_bedrooms2)
+				if apartment.num_bedrooms:
+					if apartment.num_bedrooms != new_num_bedrooms2:
+						print '  Number of bedrooms conflict: %d != %d' % (apartment.num_bedrooms, new_num_bedrooms2)
+				else:
+					apartment.num_bedrooms = new_num_bedrooms2
+					updated = True
+		
+		# Extract number of bathrooms.
+		num_bathrooms_match = num_bathrooms_regex.search(ad_text_no_html)
+		if num_bathrooms_match:
+			new_num_bathrooms1 = num_bathrooms_match.group('num_bathrooms1')
+			new_num_bathrooms2 = num_bathrooms_match.group('num_bathrooms2')
+			if new_num_bathrooms1:
+				new_num_bathrooms1 = Decimal(new_num_bathrooms1)
+				if apartment.num_bathrooms:
+					if apartment.num_bathrooms != new_num_bathrooms1:
+						print '  Number of bathrooms conflict: %d != %d' % (apartment.num_bathrooms, new_num_bathrooms1)
+				else:
+					apartment.num_bathrooms = new_num_bathrooms1
+					updated = True
+			if new_num_bathrooms2:
+				new_num_bathrooms2 = Decimal(new_num_bathrooms2)
+				if apartment.num_bathrooms:
+					if apartment.num_bathrooms != new_num_bathrooms2:
+						print '  Number of bathrooms conflict: %d != %d' % (apartment.num_bathrooms, new_num_bathrooms2)
+				else:
+					apartment.num_bathrooms = new_num_bathrooms2
+					updated = True
+		
+		# Extract address from title.
+		street_address_match = street_address_regex.search(apartment.title_address)
+		city_state_match = city_state_regex.search(apartment.title_address)
+		if street_address_match:
+			apartment.street_address = street_address_match.group('street_address')
+			updated = True
+			num += 1
+		if city_state_match:
+			apartment.city = city_state_match.group('city')
+			apartment.state = city_state_match.group('state')
+			updated = True
+		
+		# Extract street address from ad content.
+		if not apartment.street_address:
+			cltag_xstreet0_match = cltag_xstreet0_regex.search(apartment.full_ad_text)
+			if cltag_xstreet0_match:
+				apartment.street_address = cltag_xstreet0_match.group('xstreet0')
+				updated = True
+				num += 1
+		if not apartment.street_address:
+			cltag_xstreet1_match = cltag_xstreet1_regex.search(apartment.full_ad_text)
+			if cltag_xstreet1_match:
+				apartment.street_address = cltag_xstreet1_match.group('xstreet1')
+				updated = True
+				num += 1
+		
+		# Extract city and state from ad content.
+		cltag_city_match = cltag_city_regex.search(apartment.full_ad_text)
+		if cltag_city_match:
+			city = cltag_city_match.group('city')
+			if apartment.city and apartment.city != city:
+				print '  City conflict: %s != %s' % (apartment.city, city)
+			apartment.city = city
+			updated = True
+		cltag_state_match = cltag_state_regex.search(apartment.full_ad_text)
+		if cltag_state_match:
+			state = cltag_state_match.group('state')
+			if apartment.state and apartment.state != state:
+				print '  State conflict: %s != %s' % (apartment.state, state)
+			apartment.state = state
+			updated = True
+		
+		# Extract pets information.
+		cltag_dogs_match = cltag_dogs_regex.search(apartment.full_ad_text)
+		if cltag_dogs_match:
+			apartment.dogs_allowed = True
+			updated = True
+		cltag_cats_match = cltag_cats_regex.search(apartment.full_ad_text)
+		if cltag_cats_match:
+			apartment.cats_allowed = True
+			updated = True
+		
+		# Save the extracted information.
+		if updated:
+			print 'Number of bathrooms: %f' % apartment.num_bathrooms
+			apartment.save()
+		
+	print 'extracted %d street addresses' % num
+
+def remove_html_tags(data):
+    p = re.compile(r'<.*?>')
+    return p.sub('', data)
