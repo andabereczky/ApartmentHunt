@@ -17,12 +17,12 @@
     <!-- end #header --></div>
     <div id="mainContentNoSideBarCenter">
 {% if sites %}
-        <select id="select_site" name="select_site">
+        <select id="select_site" name="select_site" onchange='go_search()'>
+          <option value=""></option>
 	{% for site in sites %}
-          <option value="{{ site.id }}">{{ site.site_name }}</option>
+          <option value="{{ site.site_subdomain }}">{{ site.site_name }}</option>
     {% endfor %}
         </select>
-		<p><input type="button" name="search" id="search" value="Search" onclick="go_search()" />&nbsp;<input type="button" name="collect_data" id="collect_data" value="Collect new data" onclick="go_collect_data()" /></p>
 {% else %}
 	  <p>No Craigslist sites available.</p>
 {% endif %}

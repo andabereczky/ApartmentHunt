@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.http import HttpResponse
 from django.template import Context, loader
 from django.core.exceptions import ObjectDoesNotExist
@@ -19,32 +20,35 @@ def index(request):
 	# Render the page.
 	return render_to_response('apartmenthunt/index.html', context)
 
-def search(request, craigslist_site_id):
+def search(request, craigslist_site_subdomain):
 	
 	# Get the specified Craigslist site from the database.
-	site = get_object_or_404(CraigslistSite, pk=craigslist_site_id)
+	site = get_object_or_404(CraigslistSite, site_subdomain=craigslist_site_subdomain)
 	
 	# Get the number of apartments for this site.
-	num_apartments_old = Apartment.objects.filter(craigslist_site=craigslist_site_id).count()
+	num_apartments_old = Apartment.objects.filter(craigslist_site=site.id).count()
 	
 	# Download new data from Craigslist.
 	crawler.crawl(site)
 	
 	# Get the site again from the database.
-	site = get_object_or_404(CraigslistSite, pk=craigslist_site_id)
+	site = get_object_or_404(CraigslistSite, site_subdomain=craigslist_site_subdomain)
 	
 	# Delete all expired listings from the database.
 	# TODO: implement
 	
 	# Get the site again from the database.
-	# site = get_object_or_404(CraigslistSite, pk=craigslist_site_id)
+	# site = get_object_or_404(CraigslistSite, site_subdomain=craigslist_site_subdomain)
 	
 	# Get the number of apartments for this site again, to see how many new
 	# apartments were added.
-	num_apartments_new = Apartment.objects.filter(craigslist_site=craigslist_site_id).count()
+	num_apartments_new = Apartment.objects.filter(craigslist_site=site.id).count()
 	
 	# Calculate the number of apartments that were added.
 	num_apartments = num_apartments_new - num_apartments_old
+	if num_apartments > 0:
+		site.last_collection_date = datetime.now()
+		site.save()
 	
 	# Set up the context (i.e. a dictionary mapping template variable names to
 	# Python objects)

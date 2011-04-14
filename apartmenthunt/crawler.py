@@ -81,7 +81,9 @@ def download_ads(site, main_page_content):
 	
 	# Create the regular expression used to extract the urls and the preliminary
 	# information.
-	pattern = '<p><a href="http://chambana\.craigslist\.org/apa/(?P<listing_number>\d+)\.html">'
+	pattern = '<p><a href="http://'
+	pattern += site.site_subdomain
+	pattern += '\.craigslist\.org/apa/(?P<listing_number>\d+)\.html">'
 	pattern += '(((\$(?P<price1>\d+) / (?P<num_bedrooms1>\d+)br)|(\$(?P<price2>\d+))|((?P<num_bedrooms2>\d+)br)) - )'
 	pattern += '(?P<title>.*)</a> - '
 	pattern += '<font size="-1"> \((?P<address>.*)\)</font>'
@@ -111,7 +113,7 @@ def download_ads(site, main_page_content):
 		address = match.group('address')
 		
 		# Build the ad page URL
-		url = 'http://chambana.craigslist.org/apa/%s.html' % listing_number
+		url = 'http://%s.craigslist.org/apa/%s.html' % (site.site_subdomain, listing_number)
 		
 		# Download the page
 		print 'Downloading page %s...' % url
