@@ -14,9 +14,52 @@
     <div id="header">
     	<h1>ApartmentHunt</h1>
     <!-- end #header --></div>
-    <div id="mainContentNoSideBarCenter">
-		<p>You're looking to search data on site {{ site.site_name }}.</p>
-	<!-- end #mainContent --></div>
+    <div id="mainContentNoSideBar">
+		<h3>Apartments in {{ site.site_name }}</h3>
+{% if num_apartments > 0 %}
+      <p>Collected data about {{ num_apartments }} new apartment(s) in {{ site.site_name }}.</p>
+{% endif %}
+{% if site.apartment_set.all %}
+<table border="0" cellspacing="10" cellpadding="0">
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Price</th>
+            <th scope="col">Bedrooms</th>
+            <th scope="col">Bathrooms</th>
+            <th scope="col">Street address</th>
+            <th scope="col">City</th>
+            <th scope="col">State</th>
+            <th scope="col">Dogs?</th>
+            <th scope="col">Cats?</th>
+            <th scope="col">Listing</th>
+          </tr>
+	{% for apartment in site.apartment_set.all %}
+          <tr>
+            <th scope="row">{{ apartment.id }}</th>
+            <td>{{ apartment.price }}</td>
+            <td>{{ apartment.num_bedrooms }}</td>
+            <td>{{ apartment.num_bathrooms }}</td>
+            <td>{{ apartment.street_address }}</td>
+            <td>{{ apartment.city }}</td>
+            <td>{{ apartment.state }}</td>
+		{% if apartment.dogs_allowed %}
+            <td>Yes</td>
+		{% else %}
+            <td>No</td>
+		{% endif %}
+		{% if apartment.cats_allowed %}
+            <td>Yes</td>
+		{% else %}
+            <td>No</td>
+		{% endif %}
+            <td><a href="http://{{ site.site_subdomain }}.craigslist.org/apa/{{ apartment.listing_number }}.html">Listing</a></td>
+          </tr>
+	{% endfor %}
+      </table>
+{% else %}
+        <p>No apartments found in {{ site.site_name }}.</p>
+{% endif %}
+<!-- end #mainContent --></div>
     <div id="footer">
 	    <p>&copy; Anda Bereczky 2011</p>
     <!-- end #footer --></div>

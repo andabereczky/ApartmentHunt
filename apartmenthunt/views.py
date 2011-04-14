@@ -19,10 +19,12 @@ def index(request):
 	# Render the page.
 	return render_to_response('apartmenthunt/index.html', context)
 
-def datacollection(request, craigslist_site_id):
+def search(request, craigslist_site_id):
 	
 	# Get the specified Craigslist site from the database.
 	site = get_object_or_404(CraigslistSite, pk=craigslist_site_id)
+	
+	# Get the number of apartments for this site.
 	num_apartments_old = Apartment.objects.filter(craigslist_site=craigslist_site_id).count()
 	
 	# Download new data from Craigslist.
@@ -36,6 +38,9 @@ def datacollection(request, craigslist_site_id):
 	
 	# Get the site again from the database.
 	# site = get_object_or_404(CraigslistSite, pk=craigslist_site_id)
+	
+	# Get the number of apartments for this site again, to see how many new
+	# apartments were added.
 	num_apartments_new = Apartment.objects.filter(craigslist_site=craigslist_site_id).count()
 	
 	# Calculate the number of apartments that were added.
@@ -46,20 +51,6 @@ def datacollection(request, craigslist_site_id):
 	context = Context({
 		'site': site,
 		'num_apartments': num_apartments,
-	})
-	
-	# Render the page.
-	return render_to_response('apartmenthunt/datacollection.html', context)
-
-def search(request, craigslist_site_id):
-	
-	# Get the specified Craigslist site from the database.
-	site = get_object_or_404(CraigslistSite, pk=craigslist_site_id)
-	
-	# Set up the context (i.e. a dictionary mapping template variable names to
-	# Python objects)
-	context = Context({
-		'site': site,
 	})
 	
 	# Render the page.

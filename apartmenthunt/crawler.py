@@ -8,7 +8,7 @@ from apartmenthunt.models import CraigslistSite, Apartment
 # Taken from http://www.usps.com/ncsc/lookups/abbreviations.html
 date_and_time_pattern = 'Date: (?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2}), (?P<hours>( |[0-9])[0-9]):(?P<minutes>[0-9]{2})(?P<am_or_pm>AM|PM) (EDT|EST|CDT|CST|MDT|MST|PDT|PST)'
 number = '[0-9]+[A-Za-z]*'
-street = '(([A-Z]|[0-9]+)[a-z]*[.]?[ ]?){1,2}'
+street = '(([A-Z]|[0-9]+)[a-z]*[.]?[ ]*){1,2}'
 street_suffix = '(%s)' % '|'.join(('ALLEE','ALLEY','ALLY','ALY','AV','AVE','AVEN','AVENU','AVENUE','AVN','AVNUE','BLVD','BOUL','BOULEVARD','BOULV',
     'BYP','BYPA','BYPAS','BYPASS','BYPS','CIR','CIRC','CIRCL','CIRCLE','COURT','COVE','CRCL','CRCLE','CRECENT','CRES','CRESCENT','CRESENT','CRSCNT',
     'CRSENT','CRSNT','CRT','CT','CV','DR','DRIV','DRIVE','DRV','EXP','EXPR','EXPRESS','EXPRESSWAY','EXPW','EXPY','EXT','EXTENSION','EXTN','EXTNSN',
@@ -27,7 +27,7 @@ state = '(%s)' % '|'.join(('ALABAMA','AL','ALASKA','AK','AMERICAN SAMOA','AS','A
     'SOUTH CAROLINA','SC','SOUTH DAKOTA','SD','TENNESSEE','TN','TEXAS','TX','UTAH','UT','VERMONT','VT','VIRGIN ISLANDS','VI','VIRGINIA','VA',
     'WASHINGTON','WA','WEST VIRGINIA','WV','WISCONSIN','WI','WYOMING','WY'))
 street_address_pattern = '(?P<street_address>%s %s( %s)?[.]?)' % (number, street, street_suffix)
-city_state_pattern = '((?P<city>%s),[ ]?(?P<state>%s))' % (city, state)
+city_state_pattern = '((?P<city>%s),[ ]*(?P<state>%s))' % (city, state)
 cltag_xstreet0_pattern = '<!-- CLTAG xstreet0=(?P<xstreet0>.*?) -->'
 cltag_xstreet1_pattern = '<!-- CLTAG xstreet1=(?P<xstreet1>.*?) -->'
 cltag_city_pattern = '<!-- CLTAG city=(?P<city>.*?) -->'
@@ -37,6 +37,8 @@ cltag_cats_pattern = '<!-- CLTAG catsAreOK=on -->'
 
 # Needed only if this information is not extracted from the main search page.
 # cltag_geographic_area = '<!-- CLTAG GeographicArea=(?P<geographic_area>.*?) -->'
+
+development_version = True
 
 def crawl(site):
 	'''Crawls the given Craigslist site.'''
@@ -51,11 +53,21 @@ def crawl(site):
 	# Download each individual ad.
 	download_ads(site, main_page_content)
 	
-	# Comment this out for release
-	apartments = Apartment.objects.filter(craigslist_site=site.id)
-	for apartment in apartments:
-		apartment.information_extracted = False
-		apartment.save()
+	# Erase all the previous extracted information.
+	if development_version:
+		apartments = Apartment.objects.filter(craigslist_site=site.id)
+		for apartment in apartments:
+			apartment.information_extracted = False
+			apartment.listing_datetime = None
+			apartment.price = None
+			apartment.num_bedrooms = None
+			apartment.num_bathrooms = None
+			apartment.street_address = None
+			apartment.city = None
+			apartment.state = None
+			apartment.cats_allowed = False
+			apartment.dogs_allowed = False
+			apartment.save()
 	
 	# Extract information from ads
 	extract_ad_information(site)
@@ -145,7 +157,6 @@ def extract_ad_information(site):
 	cltag_cats_regex = re.compile(cltag_cats_pattern) # are cats allowed?
 	
 	# Loop through all apartments.
-	num = 0
 	for apartment in apartments:
 		
 		if apartment.information_extracted:
@@ -155,6 +166,7 @@ def extract_ad_information(site):
 		updated = False
 		
 		# Strip HTML tags from the ad page.
+		ad_text_html = apartment.full_ad_text
 		ad_text_no_html = remove_html_tags(apartment.full_ad_text)
 		
 		# Extract listing date and time.
@@ -233,7 +245,6 @@ def extract_ad_information(site):
 		if street_address_match:
 			apartment.street_address = street_address_match.group('street_address')
 			updated = True
-			num += 1
 		if city_state_match:
 			apartment.city = city_state_match.group('city')
 			apartment.state = city_state_match.group('state')
@@ -241,27 +252,25 @@ def extract_ad_information(site):
 		
 		# Extract street address from ad content.
 		if not apartment.street_address:
-			cltag_xstreet0_match = cltag_xstreet0_regex.search(apartment.full_ad_text)
+			cltag_xstreet0_match = cltag_xstreet0_regex.search(ad_text_html)
+			cltag_xstreet1_match = cltag_xstreet1_regex.search(ad_text_html)
 			if cltag_xstreet0_match:
-				apartment.street_address = cltag_xstreet0_match.group('xstreet0')
+				street_address = cltag_xstreet0_match.group('xstreet0')
+				if cltag_xstreet1_match and cltag_xstreet1_match.group('xstreet1'):
+					street_address += ' & '
+					street_address += cltag_xstreet1_match.group('xstreet1')
+				apartment.street_address = street_address
 				updated = True
-				num += 1
-		if not apartment.street_address:
-			cltag_xstreet1_match = cltag_xstreet1_regex.search(apartment.full_ad_text)
-			if cltag_xstreet1_match:
-				apartment.street_address = cltag_xstreet1_match.group('xstreet1')
-				updated = True
-				num += 1
 		
 		# Extract city and state from ad content.
-		cltag_city_match = cltag_city_regex.search(apartment.full_ad_text)
+		cltag_city_match = cltag_city_regex.search(ad_text_html)
 		if cltag_city_match:
 			city = cltag_city_match.group('city')
 			if apartment.city and apartment.city.lower() != city.lower():
 				print '  City conflict: %s != %s' % (apartment.city, city)
 			apartment.city = city
 			updated = True
-		cltag_state_match = cltag_state_regex.search(apartment.full_ad_text)
+		cltag_state_match = cltag_state_regex.search(ad_text_html)
 		if cltag_state_match:
 			state = cltag_state_match.group('state')
 			if apartment.state and apartment.state.lower() != state.lower():
@@ -270,24 +279,27 @@ def extract_ad_information(site):
 			updated = True
 		
 		# Extract pets information.
-		cltag_dogs_match = cltag_dogs_regex.search(apartment.full_ad_text)
+		cltag_dogs_match = cltag_dogs_regex.search(ad_text_html)
 		if cltag_dogs_match:
 			apartment.dogs_allowed = True
 			updated = True
-		cltag_cats_match = cltag_cats_regex.search(apartment.full_ad_text)
+		cltag_cats_match = cltag_cats_regex.search(ad_text_html)
 		if cltag_cats_match:
 			apartment.cats_allowed = True
 			updated = True
 		
 		# Save the extracted information.
 		if updated:
+			apartment.information_extracted = True
 			apartment.save()
-		
-	print 'extracted %d street addresses' % num
 
 def remove_html_tags(data):
     p = re.compile(r'<.*?>')
     return p.sub('', data)
+
+def remove_extra_spaces(data):
+	p = re.compile(r'\s+')
+	return p.sub(' ', data)
 
 def get_date_and_time(year, month, day, hours, minutes, am_or_pm):
 	if am_or_pm == 'PM' and hours > 12:
