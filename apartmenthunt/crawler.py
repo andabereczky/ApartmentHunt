@@ -5,8 +5,27 @@ import re
 from django.shortcuts import get_object_or_404
 from apartmenthunt.models import CraigslistSite, Apartment
 
-# Taken from http://www.usps.com/ncsc/lookups/abbreviations.html
-date_and_time_pattern = 'Date: (?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2}), (?P<hours>( |[0-9])[0-9]):(?P<minutes>[0-9]{2})(?P<am_or_pm>AM|PM) (EDT|EST|CDT|CST|MDT|MST|PDT|PST)'
+# URL and preliminary information.
+url_prelim_pattern = '<p><a href="http://%s\.craigslist\.org/apa/(?P<listing_number>\d+)\.html">'
+url_prelim_pattern += '(((\$(?P<price1>\d+) / (?P<num_bedrooms1>\d+)br)|(\$(?P<price2>\d+))|((?P<num_bedrooms2>\d+)br)) - )'
+url_prelim_pattern += '(?P<title>.*)</a> - '
+url_prelim_pattern += '<font size="-1"> \((?P<address>.*)\)</font>'
+
+# Date and time that listing was posted
+date_and_time_pattern = 'Date: (?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})'
+date_and_time_pattern += ', (?P<hours>( |[0-9])[0-9]):(?P<minutes>[0-9]{2})(?P<am_or_pm>AM|PM) (EDT|EST|CDT|CST|MDT|MST|PDT|PST)'
+
+# Price / rent.
+price_pattern = '\$(?P<price>\d+)'
+
+# Number of bedrooms.
+num_bedrooms_pattern = '((?P<num_bedrooms1>\d+) ?br)|((?P<num_bedrooms2>\d+) bedroom(s)?)'
+
+# Number of bathrooms.
+num_bathrooms_pattern = '((?P<num_bathrooms1>(\d+)\.?(\d+)?) ?ba)|((?P<num_bathrooms2>(\d+)\.?(\d+)?) bathroom(s)?)'
+
+# Listing address
+# Some info taken from http://www.usps.com/ncsc/lookups/abbreviations.html
 number = '[0-9]+[A-Za-z]*'
 street = '(([A-Z]|[0-9]+)[a-z]*[.]?[ ]*){1,2}'
 street_suffix = '(%s)' % '|'.join(('ALLEE','ALLEY','ALLY','ALY','AV','AVE','AVEN','AVENU','AVENUE','AVN','AVNUE','BLVD','BOUL','BOULEVARD','BOULV',
@@ -32,11 +51,12 @@ cltag_xstreet0_pattern = '<!-- CLTAG xstreet0=(?P<xstreet0>.*?) -->'
 cltag_xstreet1_pattern = '<!-- CLTAG xstreet1=(?P<xstreet1>.*?) -->'
 cltag_city_pattern = '<!-- CLTAG city=(?P<city>.*?) -->'
 cltag_state_pattern = '<!-- CLTAG region=(?P<state>.*?) -->'
+# Needed only if this information is not extracted from the main search page.
+# cltag_geographic_area_pattern = '<!-- CLTAG GeographicArea=(?P<geographic_area>.*?) -->'
+
+# Listing pets policy
 cltag_dogs_pattern = '<!-- CLTAG dogsAreOK=on -->'
 cltag_cats_pattern = '<!-- CLTAG catsAreOK=on -->'
-
-# Needed only if this information is not extracted from the main search page.
-# cltag_geographic_area = '<!-- CLTAG GeographicArea=(?P<geographic_area>.*?) -->'
 
 development_version = True
 
@@ -81,13 +101,7 @@ def download_ads(site, main_page_content):
 	
 	# Create the regular expression used to extract the urls and the preliminary
 	# information.
-	pattern = '<p><a href="http://'
-	pattern += site.site_subdomain
-	pattern += '\.craigslist\.org/apa/(?P<listing_number>\d+)\.html">'
-	pattern += '(((\$(?P<price1>\d+) / (?P<num_bedrooms1>\d+)br)|(\$(?P<price2>\d+))|((?P<num_bedrooms2>\d+)br)) - )'
-	pattern += '(?P<title>.*)</a> - '
-	pattern += '<font size="-1"> \((?P<address>.*)\)</font>'
-	regex = re.compile(pattern)
+	regex = re.compile(url_prelim_pattern % site.site_subdomain)
 	
 	# Download the HTML code of each ad and save it in the database together
 	# with the information extracted from the main page.
@@ -142,13 +156,10 @@ def extract_ad_information(site):
 	apartments = Apartment.objects.filter(craigslist_site=site.id)
 	
 	# Compile all needed regular expressions.
-	date_and_time_regex = re.compile(date_and_time_pattern)
-	pattern = '\$(?P<price>\d+)' # price
-	price_regex = re.compile(pattern)
-	pattern = '((?P<num_bedrooms1>\d+) ?br)|((?P<num_bedrooms2>\d+) bedroom(s)?)' # number of bedrooms
-	num_bedrooms_regex = re.compile(pattern, re.IGNORECASE)
-	pattern = '((?P<num_bathrooms1>(\d+)\.?(\d+)?) ?ba)|((?P<num_bathrooms2>(\d+)\.?(\d+)?) bathroom(s)?)' # number of bathrooms
-	num_bathrooms_regex = re.compile(pattern, re.IGNORECASE)
+	date_and_time_regex = re.compile(date_and_time_pattern) # date and time
+	price_regex = re.compile(price_pattern) # price / rent
+	num_bedrooms_regex = re.compile(num_bedrooms_pattern, re.IGNORECASE) # number of bedrooms
+	num_bathrooms_regex = re.compile(num_bathrooms_pattern, re.IGNORECASE) # number of bathrooms
 	street_address_regex = re.compile(street_address_pattern, re.IGNORECASE) # street address
 	city_state_regex = re.compile(city_state_pattern, re.IGNORECASE) # city and state
 	cltag_xstreet0_regex = re.compile(cltag_xstreet0_pattern, re.IGNORECASE) # street location
