@@ -25,9 +25,12 @@ body  {
 }
 .twoColFixLtHdr #sidebar1 {
 	float: left; /* since this element is floated, a width must be given */
-	width: 200px; /* the actual width of this div, in standards-compliant browsers, or standards mode in Internet Explorer will include the padding and border in addition to the width */
+	width: 180px; /* the actual width of this div, in standards-compliant browsers, or standards mode in Internet Explorer will include the padding and border in addition to the width */
 	background: #EBEBEB; /* the background color will be displayed for the length of the content in the column, but no further */
-	padding: 15px 10px 15px 20px;
+	padding: 20px;
+}
+.twoColFixLtHdr #notopmargin {
+	margin-top: 0;
 }
 .twoColFixLtHdr #mainContentNoSideBar { 
 	margin: 0; /* the left margin on this div element creates the column down the left side of the page - no matter how much content the sidebar1 div contains, the column space will remain. You can remove this margin if you want the #mainContent div's text to fill the #sidebar1 space when the content in #sidebar1 ends. */
@@ -39,9 +42,12 @@ body  {
 	text-align: center;
 } 
 .twoColFixLtHdr #mainContent { 
-	margin: 0 0 0 250px; /* the left margin on this div element creates the column down the left side of the page - no matter how much content the sidebar1 div contains, the column space will remain. You can remove this margin if you want the #mainContent div's text to fill the #sidebar1 space when the content in #sidebar1 ends. */
+	margin: 0 0 0 220px; /* the left margin on this div element creates the column down the left side of the page - no matter how much content the sidebar1 div contains, the column space will remain. You can remove this margin if you want the #mainContent div's text to fill the #sidebar1 space when the content in #sidebar1 ends. */
 	padding: 0 20px; /* remember that padding is the space inside the div box and margin is the space outside the div box */
 } 
+.twoColFixLtHdr #errormsg {
+	color: #CC3333;
+}
 .twoColFixLtHdr #footer { 
 	padding: 0 10px 0 20px; /* this padding matches the left alignment of the elements in the divs that appear above it. */
 	background:#DDDDDD;

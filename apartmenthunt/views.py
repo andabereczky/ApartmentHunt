@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.template import Context, loader
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render_to_response, get_object_or_404
-from apartmenthunt.models import CraigslistSite, Apartment
+from apartmenthunt.models import CraigslistSite, Apartment, get_apartments_from_search
 import crawler
 
 def index(request):
@@ -31,14 +31,8 @@ def search(request, craigslist_site_subdomain):
 	# Download new data from Craigslist.
 	crawler.crawl(site)
 	
-	# Get the site again from the database.
-	site = get_object_or_404(CraigslistSite, site_subdomain=craigslist_site_subdomain)
-	
 	# Delete all expired listings from the database.
 	# TODO: implement
-	
-	# Get the site again from the database.
-	# site = get_object_or_404(CraigslistSite, site_subdomain=craigslist_site_subdomain)
 	
 	# Get the number of apartments for this site again, to see how many new
 	# apartments were added.
@@ -50,11 +44,16 @@ def search(request, craigslist_site_subdomain):
 		site.last_collection_date = datetime.now()
 		site.save()
 	
+	# Get the apartments that match the current search filter.
+	apartments, errors = get_apartments_from_search(site, request.GET)
+	
 	# Set up the context (i.e. a dictionary mapping template variable names to
 	# Python objects)
 	context = Context({
 		'site': site,
+		'apartments': apartments,
 		'num_apartments': num_apartments,
+		'errors': errors,
 	})
 	
 	# Render the page.

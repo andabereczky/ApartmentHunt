@@ -14,18 +14,50 @@
     <div id="header">
     	<h1>ApartmentHunt</h1>
     <!-- end #header --></div>
-    <div id="mainContentNoSideBar">
+    <div id="sidebar1">
+        <form id="form1" name="form1" method="get" action="/apartmenthunt/{{ site.site_subdomain }}/search/">
+        <p id="notopmargin">Rent:<br /><input name="price_min" type="text" id="price_min" size="5" /> to <input name="price_max" type="text" id="price_max" size="5" /></p>
+        <p>Number of bedrooms:<br />
+        <select name="bedrooms" id="bedrooms">
+            <option value="all" selected="selected">Show all</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4 or more</option>
+        </select></p>
+        <p>Number of bathrooms:<br />
+        <select name="bathrooms" id="bathrooms">
+            <option value="all" selected="selected">Show all</option>
+            <option value="1">1</option>
+            <option value="1.5">1.5</option>
+            <option value="2">2</option>
+            <option value="2.5">2.5</option>
+            <option value="3">3 or more</option>
+        </select></p>
+        <p>
+            <input type="checkbox" name="dogs_allowed" id="dogs_allowed" />&nbsp;Dogs allowed?<br />
+            <input type="checkbox" name="cats_allowed" id="cats_allowed" />&nbsp;Cats allowed?
+        </p>
+        <p><input type="submit" name="submit" value="Submit" /></p>
+      </form>
+    <!-- end #sidebar1 --></div>
+    <div id="mainContent">
+{% if errors %}
+	{% for error in errors %}
+		<p id="errormsg">{{ error }}</p>
+	{% endfor %}
+{% endif %}
 		<h3>Apartments in {{ site.site_name }}</h3>
 {% if num_apartments > 0 %}
       <p>Collected data about {{ num_apartments }} new apartment(s) in {{ site.site_name }}.</p>
 {% endif %}
-{% if site.apartment_set.all %}
+{% if apartments %}
 <table border="0" cellspacing="10" cellpadding="0">
           <tr>
             <th scope="col">#</th>
             <th scope="col">Price</th>
-            <th scope="col">Bedrooms</th>
-            <th scope="col">Bathrooms</th>
+            <th scope="col">Bed</th>
+            <th scope="col">Bath</th>
             <th scope="col">Street address</th>
             <th scope="col">City</th>
             <th scope="col">State</th>
@@ -33,7 +65,7 @@
             <th scope="col">Cats?</th>
             <th scope="col">Listing</th>
           </tr>
-	{% for apartment in site.apartment_set.all %}
+	{% for apartment in apartments %}
           <tr>
             <th scope="row">{{ apartment.id }}</th>
             <td>{{ apartment.price }}</td>
