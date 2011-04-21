@@ -8,8 +8,6 @@ class CraigslistSite(models.Model):
 	last_collection_date = models.DateTimeField('last collection date')
 	def __unicode__(self):
 		return self.site_name;
-	def was_collected_today(self):
-		return self.last_collection_date.date() == datetime.date.today()
 
 class Apartment(models.Model):
 	''' A class representing an ad for an apartment.'''

@@ -49,45 +49,45 @@
 {% endif %}
 		<h3>Apartments in {{ site.site_name }}</h3>
 {% if num_apartments > 0 %}
-      <p>Collected data about {{ num_apartments }} new apartment(s) in {{ site.site_name }}.</p>
+		<p>Collected data about {{ num_apartments }} new apartment(s) in {{ site.site_name }}.</p>
 {% endif %}
 {% if apartments %}
-<table border="0" cellspacing="10" cellpadding="0">
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Price</th>
-            <th scope="col">Bed</th>
-            <th scope="col">Bath</th>
-            <th scope="col">Street address</th>
-            <th scope="col">City</th>
-            <th scope="col">State</th>
-            <th scope="col">Dogs?</th>
-            <th scope="col">Cats?</th>
-            <th scope="col">Listing</th>
-          </tr>
+		<table border="0" cellspacing="10" cellpadding="0">
+			<tr>
+				<th scope="col">#</th>
+				<th scope="col">Price</th>
+				<th scope="col">Bed</th>
+				<th scope="col">Bath</th>
+				<th scope="col">Street address</th>
+				<th scope="col">City</th>
+				<th scope="col">State</th>
+				<th scope="col">Dogs?</th>
+				<th scope="col">Cats?</th>
+				<th scope="col">Listing</th>
+			</tr>
 	{% for apartment in apartments %}
-          <tr>
-            <th scope="row">{{ apartment.id }}</th>
-            <td>{{ apartment.price }}</td>
-            <td>{{ apartment.num_bedrooms }}</td>
-            <td>{{ apartment.num_bathrooms }}</td>
-            <td>{{ apartment.street_address }}</td>
-            <td>{{ apartment.city }}</td>
-            <td>{{ apartment.state }}</td>
+			<tr>
+				<th scope="row">{{ apartment.id }}</th>
+				<td>{{ apartment.price }}</td>
+				<td>{{ apartment.num_bedrooms }}</td>
+				<td>{{ apartment.num_bathrooms }}</td>
+				<td>{{ apartment.street_address }}</td>
+				<td>{{ apartment.city }}</td>
+				<td>{{ apartment.state }}</td>
 		{% if apartment.dogs_allowed %}
-            <td>Yes</td>
+				<td>Yes</td>
 		{% else %}
-            <td>No</td>
+				<td>No</td>
 		{% endif %}
 		{% if apartment.cats_allowed %}
-            <td>Yes</td>
+				<td>Yes</td>
 		{% else %}
-            <td>No</td>
+				<td>No</td>
 		{% endif %}
-            <td><a href="http://{{ site.site_subdomain }}.craigslist.org/apa/{{ apartment.listing_number }}.html">Listing</a></td>
-          </tr>
+				<td><a href="http://{{ site.site_subdomain }}.craigslist.org/apa/{{ apartment.listing_number }}.html">Listing</a></td>
+			</tr>
 	{% endfor %}
-      </table>
+		</table>
 {% else %}
         <p>No apartments found in {{ site.site_name }}.</p>
 {% endif %}

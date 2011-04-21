@@ -1,0 +1,72 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+<html> 
+	<head> 
+		<title>craigslist: Deleted Posting - Spacious apartment near Siebel Center for Summer 2011!</title> 
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"> 
+		<link type="text/css" rel="stylesheet" media="all" href="/styles/craigslist.css?v=8"> 
+	</head> 
+ 
+<body> 
+ 
+	<table style="background:lightblue" cellpadding="7"> 
+		<tr> 
+			<td colspan="2"> 
+				<b> 
+					<b>Posted to <em>sublets & temporary</em> on <em><a href="http://www.craigslist.org">chambana</a></em> craigslist</b> 
+				</b> 
+			</td> 
+		</tr> 
+		<tr><td><form action="https://accounts.craigslist.org/post/reppst"><input type="hidden" name="postingInfoID" value="2298489424"><input type="hidden" name="dbToUse" value="clRead"><input type="submit" value="Repost this Posting"></form></td><td>This will make a new copy of this posting available on the site. You will have the opportunity to make changes to the content before it is made live.</td></tr> 
+ 
+		</table> 
+ 
+<hr> 
+<br> 
+<br> 
+Sublet a spacious 1 bedroom apartment for Summer 2011!<br> 
+<br> 
+Quiet neighborhood.<br> 
+<br> 
+Furnished & carpeted, A/C, dishwasher, garbage disposal, microwave, washer & dryer in unit. 1BA<br> 
+<br> 
+High speed Internet included, cable ready.<br> 
+<br> 
+Private parking spot included.<br> 
+<br> 
+Secured building with bicycle room.<br> 
+<br> 
+No pets.<br> 
+<br> 
+2 blocks to Engineering campus and Siebel Center.<br> 
+<br> 
+Close to MTD routes (22 Illini and 13 Silver).<br> 
+<br> 
+Rent is $540/month (negotiable).<br> 
+<br> 
+Available from May 14 until August 6.<br> 
+<br> 
+Email Anda for more information.<br> 
+<br> 
+For more pictures, go here: <a href="http://www.advproperties.com/search/6.html" rel="nofollow">http://www.advproperties.com/search/6.html</a><!-- START CLTAGS --> 
+ 
+ 
+<br><br> 
+			<!-- CLTAG xstreet0=Clark --> 
+			<!-- CLTAG xstreet1=Gregory --> 
+			<!-- CLTAG city=URBANA --> 
+			<!-- CLTAG region=Illinois --> 
+			1002 W CLARK ST
+			<small> 
+				(<a target="_blank" href="http://maps.google.com/?q=loc%3A+%31%30%30%32+W+CLARK+ST+URBANA+Illinois+US">google map</a>) 
+				(<a target="_blank" href="http://maps.yahoo.com/maps_result?addr=%31%30%30%32+W+CLARK+ST&amp;csz=URBANA+Illinois&amp;country=US">yahoo map</a>)
+			</small> 
+		<ul class="blurbs"> 
+<li> <!-- CLTAG GeographicArea=1002 W Clark St -->Location: 1002 W Clark St
+<li>it's NOT ok to contact this poster with services or other commercial interests</ul> 
+<!-- END CLTAGS --> 
+<br> 
+ 
+<hr> 
+</body> 
+</html> 
